@@ -1,6 +1,11 @@
-from fastapi import FastAPI, HTTPException, Response, status
+from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
-from random import randint
+import psycopg
+from psycopg.rows import dict_row
+from dotenv import load_dotenv
+from os import getenv
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -8,19 +13,19 @@ class Post(BaseModel):
     id : int | None = None
     title: str
     content: str
-    category: str | None = None
+    category: str = "Generic"
     published: bool = True
 
-local_db: list[Post] = [
-    Post(id=randint(1, 100), title="sample hardcoded title 1", content="sample hardcoded content 1"),
-    Post(id=randint(1, 100), title="sample hardcoded title 2", content="sample hardcoded content 2")
-]
-
-def find_post_by_id(id: int):
-    for post in local_db:
-        if id == post.id:
-            return local_db.index(post)
-    raise HTTPException(status_code=404, detail=f"Post with id {id} not found!")
+try:
+    conn = psycopg.connect(
+        dbname=getenv('DB_NAME'), user=getenv('DB_USER'), password=getenv('DB_PASS'), row_factory=dict_row
+    )
+    table_name = "posts"
+    print("DB connected!")
+except psycopg.OperationalError as err:
+    print(f"DB Error: {err}")
+except psycopg.ProgrammingError as err:
+    print(f"DB Error: {err}")
 
 @app.get("/")
 def read_root():
@@ -29,32 +34,77 @@ def read_root():
 # CRUD - C
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_post(post: Post):
-    post.id = randint(1, 100)
-    local_db.append(post)
-    return {"detail": "Post created successfully!"}
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""INSERT INTO {table_name} (title, content, category, published) 
+            VALUES (%s, %s, %s, %s) RETURNING *""",
+            (post.title, post.content, post.category, post.published)
+        )
+        new_post = cur.fetchone()
+        if new_post is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create post"
+            )
+        conn.commit()
+        return {"detail": "Post created successfully!", "data": new_post}
 
 # CRUD - R
 @app.get("/posts")
 def get_posts():
-    return {"data": local_db}
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""SELECT * FROM {table_name} ORDER BY created_at DESC"""
+        )
+        return cur.fetchall()
 
 # CRUD - R
 @app.get("/posts/{id}") # path parameter
 def get_post(id: int):
-    # # response.status_code = status.HTTP_404_NOT_FOUND; send a response: Response param in the function
-    post_index = find_post_by_id(id)
-    return local_db[post_index]
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""SELECT * FROM {table_name} WHERE id = %s""",
+            (id,)
+        )
+        row = cur.fetchone()
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Post with id {id} not found!"
+            )
+        return row
 
 # CRUD - U
 @app.put("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def update_post(id: int, post: Post):
-    post_index = find_post_by_id(id)
-    post.id = id
-    local_db[post_index] = post
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""UPDATE {table_name}
+            SET title=%s, content=%s, category=%s, published=%s WHERE id=%s RETURNING *""",
+            (post.title, post.content, post.category, post.published, id)
+        )
+        updated_post = cur.fetchone()
+        if updated_post is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Post with id {id} not found!"
+            )
+        conn.commit()
+        return
 
 # CRUD - D
 @app.delete("/posts/{id}")
 def delete_posts(id: int):
-    post_index = find_post_by_id(id)
-    deleted_post = local_db.pop(post_index)
-    return {"detail": "Post deleted successfully!", "data": deleted_post}
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""DELETE FROM {table_name} WHERE id=%s RETURNING *""",
+            (id,)
+        )
+        deleted_post = cur.fetchone()
+        if deleted_post is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Post with id {id} not found!"
+            )
+        conn.commit()
+        return {"detail": "Post deleted successfully!", "data": deleted_post}
