@@ -1,5 +1,6 @@
+from typing import Annotated
 from fastapi import status, Depends, HTTPException, APIRouter
-from .. import models, schemas
+from .. import models, schemas, oauth2
 from ..database import Session, get_db
 
 router = APIRouter(
@@ -11,7 +12,11 @@ router = APIRouter(
 
 # CRUD - C (ORM done)
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
-def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
+def create_post(
+    post: schemas.PostCreate,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+):
     new_post = models.Post(**post.model_dump())
     db.add(new_post)
     db.commit()
@@ -20,12 +25,19 @@ def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
 
 # CRUD - R (ORM done)
 @router.get("/", response_model=list[schemas.Post])
-def get_posts(db: Session = Depends(get_db)):
+def get_posts(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+):
     posts = db.query(models.Post).all()
     return posts
 
 @router.get("/{id}", response_model=schemas.Post) # path parameter
-def get_post(id: int, db: Session = Depends(get_db)):
+def get_post(
+    id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+):
     post = db.query(models.Post).filter(models.Post.id == id).first()
     if post is None:
         raise HTTPException(
@@ -36,7 +48,11 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
 # CRUD - U (ORM done)
 @router.put("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def update_post(id: int, payload: schemas.PostCreate, db: Session = Depends(get_db)):
+def update_post(
+    id: int, payload: schemas.PostCreate,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+):
     post = db.query(models.Post).filter(models.Post.id == id).first()
     if post is None:
         raise HTTPException(
@@ -51,7 +67,11 @@ def update_post(id: int, payload: schemas.PostCreate, db: Session = Depends(get_
 
 # CRUD - D (ORM done)
 @router.delete("/{id}", response_model=schemas.Post)
-def delete_post(id: int, db: Session = Depends(get_db)):
+def delete_post(
+    id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+):
     deleted_post = db.query(models.Post).filter(models.Post.id == id).first()
     if deleted_post is None:
         raise HTTPException(

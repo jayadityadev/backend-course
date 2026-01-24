@@ -1,6 +1,8 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
+# Post management schema
+
 class PostBase(BaseModel):
     title: str
     content: str
@@ -18,6 +20,8 @@ class Post(PostBase):
     class Config:
         from_attributes = True
 
+# User management schema
+
 class UserBase(BaseModel):
     email: EmailStr
 
@@ -30,3 +34,16 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+
+# Login management schema
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    id: str | None = None
