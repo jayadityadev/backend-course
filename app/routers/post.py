@@ -1,7 +1,6 @@
 from typing import Annotated
 from fastapi import status, Depends, HTTPException, APIRouter
-from .. import models, schemas, oauth2
-from ..database import Session, get_db
+from .. import models, schemas, deps
 
 router = APIRouter(
     prefix="/posts",
@@ -11,11 +10,11 @@ router = APIRouter(
 # # CRUD for managing posts
 
 # CRUD - C (ORM done)
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
 def create_post(
     post: schemas.PostCreate,
-    db: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+    db: deps.DBSession,
+    current_user: deps.CurrentUser
 ):
     new_post = models.Post(**post.model_dump())
     db.add(new_post)
@@ -24,19 +23,19 @@ def create_post(
     return new_post
 
 # CRUD - R (ORM done)
-@router.get("/", response_model=list[schemas.Post])
+@router.get("/", response_model=list[schemas.PostResponse])
 def get_posts(
-    db: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+    db: deps.DBSession,
+    current_user: deps.CurrentUser
 ):
     posts = db.query(models.Post).all()
     return posts
 
-@router.get("/{id}", response_model=schemas.Post) # path parameter
+@router.get("/{id}", response_model=schemas.PostResponse) # path parameter
 def get_post(
     id: int,
-    db: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+    db: deps.DBSession,
+    current_user: deps.CurrentUser
 ):
     post = db.query(models.Post).filter(models.Post.id == id).first()
     if post is None:
@@ -50,8 +49,8 @@ def get_post(
 @router.put("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def update_post(
     id: int, payload: schemas.PostCreate,
-    db: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+    db: deps.DBSession,
+    current_user: deps.CurrentUser
 ):
     post = db.query(models.Post).filter(models.Post.id == id).first()
     if post is None:
@@ -66,11 +65,11 @@ def update_post(
     return
 
 # CRUD - D (ORM done)
-@router.delete("/{id}", response_model=schemas.Post)
+@router.delete("/{id}", response_model=schemas.PostResponse)
 def delete_post(
     id: int,
-    db: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)]
+    db: deps.DBSession,
+    current_user: deps.CurrentUser
 ):
     deleted_post = db.query(models.Post).filter(models.Post.id == id).first()
     if deleted_post is None:

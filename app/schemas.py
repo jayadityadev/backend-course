@@ -12,7 +12,7 @@ class PostBase(BaseModel):
 class PostCreate(PostBase):
     pass
 
-class Post(PostBase):
+class PostResponse(PostBase):
     id: int
     published: bool
     created_at: datetime
@@ -28,7 +28,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class User(UserBase):
+class UserResponse(UserBase):
     id: int
     created_at: datetime
 
@@ -37,13 +37,9 @@ class User(UserBase):
 
 # Login management schema
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
-    id: str | None = None
+    sub: str | None = None

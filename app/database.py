@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 from os import getenv
 
@@ -14,6 +13,8 @@ load_dotenv()
 # SQLALCHEMY_DATABASE_URL = 'postgresql://<username>:<password>@<ip-addr (or) hostname>/<dbname>'
 
 SQLALCHEMY_DATABASE_URL = getenv("SQLALCHEMY_DATABASE_URL")
+if not SQLALCHEMY_DATABASE_URL:
+    raise RuntimeError("SQLALCHEMY_DATABASE_URL not set")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL) # Engine = connection manager.
 
