@@ -45,3 +45,4 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     sub: str | None = None
+    exp: datetime | None = None

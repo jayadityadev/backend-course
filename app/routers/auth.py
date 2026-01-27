@@ -17,7 +17,8 @@ def login_user(
         raise exceptions.credentials_exception
 
     access_token = oauth2.create_access_token(
-        data={"sub": str(user.id)},
+        # data={"sub": str(user.id)},
+        data=schemas.TokenData(sub=str(user.id)),
         expires_delta=timedelta(minutes=oauth2.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
