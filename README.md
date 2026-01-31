@@ -1,8 +1,8 @@
 # Social Media API
 
-## This FastAPI backend application uses PostgreSQL to allow CRUD operations for posts, users, and voting system on posts. Also, it provided protected endpoints so that UD (from CRUD) can be performed on posts/user belonging to the logged in user only. It handles all the edge cases neatly with proper response codes.
+### This FastAPI backend application uses PostgreSQL to allow CRUD operations for posts, users, and voting system on posts. It provides protected endpoints so that UD (from CRUD) can be performed on posts/user belonging to the logged in user only. It handles all the edge cases neatly with proper response codes.
 
-## To get started:
+### To get started:
 
 1. Clone the repository
    ```bash
@@ -18,7 +18,12 @@
 
 3. PostgreSQL should be up and running (either local or remote), and the credentials are to be put up in the `.env` file (.env.example is available for reference)
 
-4. Run the app
+4. To initialize the tables, alembic migrations are used
+   ```bash
+   alembic upgrade head
+   ```
+
+6. Run the app
    - Development
      ```bash
      fastapi dev app/main.py
