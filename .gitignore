@@ -1,3 +1,11 @@
+# Root-level ignores
 .venv/
-__pycache__
-.env
+.DS_Store
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Python
+__pycache__/

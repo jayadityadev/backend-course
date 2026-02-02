@@ -1,26 +1,33 @@
-# Social Media API
+# Social Media App (Full-Stack)
 
-A production-ready FastAPI backend application for a social media platform with user authentication, post management, and voting functionality.
+A full-stack social media application with FastAPI backend and Next.js frontend, featuring user authentication, post management, and voting functionality.
 
 ## Features
 
-- **User Authentication** - JWT-based authentication with secure password hashing (pwdlib)
+- **User Authentication** - JWT-based authentication with secure password hashing
 - **Post Management** - Full CRUD operations with ownership-based authorization
-- **Voting System** - Upvote/downvote functionality with vote count aggregation
+- **Voting System** - Upvote/downvote functionality with real-time vote counts
+- **Profile Management** - Update email/password, delete account
 - **Post Visibility** - Published posts visible to all, unpublished posts visible to owners only
 - **Search & Pagination** - Query posts by title with limit/offset pagination
-- **Database Migrations** - Alembic-managed schema versioning
 
 ## Tech Stack
 
-- **Framework**: FastAPI
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **Authentication**: JWT tokens (PyJWT) + OAuth2
-- **Password Hashing**: pwdlib (Argon2)
-- **Migrations**: Alembic
-- **Validation**: Pydantic v2
+### Backend
+- **FastAPI** - Modern Python web framework
+- **PostgreSQL** - Database with SQLAlchemy ORM
+- **JWT** - Token-based authentication
+- **Alembic** - Database migrations
+- **pwdlib** - Password hashing (Argon2)
+
+### Frontend
+- **Next.js 16** - React framework with App Router
+- **TypeScript** - Type-safe JavaScript
+- **React 19** - UI library
 
 ## Quick Start
+
+### Backend Setup
 
 ### 1. Clone the repository
 ```bash
@@ -36,11 +43,12 @@ python -m venv .venv
 # Linux/Mac
 source .venv/bin/activate
 
+cd backend
 pip install -r requirements.txt
 ```
 
 ### 3. Configure environment variables
-Create a `.env` file in the project root:
+Create a `.env` file in the `backend/` directory:
 
 ```env
 # Database Configuration
@@ -64,20 +72,50 @@ CREATE DATABASE social_media_db;
 
 ### 5. Run database migrations
 ```bash
+cd backend
 alembic upgrade head
 ```
 
-### 6. Start the application
-
-**Development:**
+### 6. Start the backend
 ```bash
+cd backend
 fastapi dev app/main.py
 ```
 Access the API at `http://localhost:8000` and interactive docs at `http://localhost:8000/docs`
 
-**Production:**
+### Frontend Setup
+
+### 1. Install dependencies
 ```bash
+cd frontend
+npm install
+```
+
+### 2. Configure environment variables
+Create a `.env.local` file in the `frontend/` directory:
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+```
+
+### 3. Start the frontend
+```bash
+npm run dev
+```
+Access the app at `http://localhost:3000`
+
+## Production Deployment
+
+**Backend:**
+```bash
+cd backend
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm run build
+npm start
 ```
 
 ## API Endpoints
@@ -97,6 +135,12 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 - `POST /vote` - Vote on a post
   - `{"post_id": 1, "dir": 1}` - Add vote
   - `{"post_id": 1, "dir": 0}` - Remove vote
+
+### Users
+- `GET /users` - List all users (requires auth)
+- `GET /users/{id}` - Get user by ID (requires auth)
+- `PUT /users/{id}` - Update user (owner only)
+- `DELETE /users/{id}` - Delete user (owner only)
 
 ## Key Concepts
 
@@ -130,35 +174,51 @@ votes: user_id (FK, PK), post_id (FK, PK)
 
 ## Development
 
-### Creating New Migrations
-Make the required changes in `app/models.py` and let alembic handle the database.
+### Database Migrations
+
+Make changes in `backend/app/models.py` then:
 ```bash
+cd backend
 alembic revision --autogenerate -m "description of changes"
 alembic upgrade head
 ```
 
 ### Rolling Back Migrations
 ```bash
+cd backend
 alembic downgrade -1  # Rollback one version
+```
+
+### Running Tests
+```bash
+cd backend
+pytest
 ```
 
 ## Project Structure
 
 ```
-app/
-├── routers/          # API route handlers
-│   ├── auth.py       # Login endpoint
-│   ├── post.py       # Post CRUD operations
-│   ├── user.py       # User management
-│   └── vote.py       # Voting system
-├── config.py         # Settings management (pydantic-settings)
-├── database.py       # SQLAlchemy setup
-├── deps.py           # Dependency injection type aliases
-├── exceptions.py     # Reusable exception definitions
-├── models.py         # SQLAlchemy ORM models
-├── oauth2.py         # JWT token creation/validation
-├── schemas.py        # Pydantic request/response models
-└── utils.py          # Password hashing utilities
+.
+├── backend/              # FastAPI backend
+│   ├── app/             # Application code
+│   │   ├── routers/     # API routes (auth, posts, users, votes)
+│   │   ├── config.py    # Settings management
+│   │   ├── database.py  # SQLAlchemy setup
+│   │   ├── deps.py      # Dependency injection
+│   │   ├── models.py    # ORM models
+│   │   ├── oauth2.py    # JWT handling
+│   │   ├── schemas.py   # Pydantic schemas
+│   │   └── utils.py     # Password hashing
+│   ├── alembic/         # Database migrations
+│   ├── tests/           # Backend tests
+│   └── .env             # Backend config
+│
+├── frontend/            # Next.js frontend
+│   ├── src/
+│   │   └── app/         # App Router pages & components
+│   └── .env.local       # Frontend config
+│
+└── docs/                # Documentation
 ```
 
 ## Working with AI Agents
