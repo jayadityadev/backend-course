@@ -48,13 +48,19 @@ def get_user(
     return user
 
 # CRUD - U
-@router.put("/{id}")
+@router.put("/{id}", response_model=schemas.UserResponse)
 def update_user(
     id: int, payload: schemas.UserCreate, db: deps.DBSession,
     current_user: deps.CurrentUser
 ):
     if current_user.id != id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Check if email already exists (and belongs to a different user)
+    existing = db.query(models.User).filter(models.User.email == payload.email).first()
+    if existing and existing.id != current_user.id:
+        raise HTTPException(status_code=409, detail="Email already registered")
+    
     user = db.query(models.User).filter(models.User.id == current_user.id).first()
     user.email = payload.email
     user.password = utils.get_password_hash(payload.password)
